@@ -1,0 +1,18 @@
+[package]
+name = "psyguard-provers"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+psyguard-core = { path = "../psyguard-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+chrono = "0.4"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

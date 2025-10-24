@@ -1,0 +1,39 @@
+[workspace]
+members = [
+    "crates/psyguard-core",
+    "crates/psyguard-wasm",
+    "crates/psyguard-provers",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["PsyGuard Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 哈希和加密
+sha2 = "0.10"
+sha3 = "0.10"
+hex = "0.4"
+
+# WASM 绑定
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+
+# 异步运行时
+tokio = { version = "1.0", features = ["full"] }
+
+# 错误处理
+thiserror = "1.0"
+anyhow = "1.0"
+
+# 日志
+log = "0.4"
