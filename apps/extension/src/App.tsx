@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Shield, Wallet, Activity, Settings } from 'lucide-react'
+import { Shield, Wallet, Activity, Settings as SettingsIcon, Inbox } from 'lucide-react'
 import WalletPanel from './components/WalletPanel'
 import TransactionPanel from './components/TransactionPanel'
 import SecurityPanel from './components/SecurityPanel'
+import ParthTransferDemo from './components/ParthTransferDemo'
+import { Settings } from './components/Settings'
+import { initWalletMode } from './background/walletAdapter'
 import { initWasm } from './lib/wasm'
 import './App.css'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'wallet' | 'transaction' | 'security'>('wallet')
+  const [activeTab, setActiveTab] = useState<'wallet' | 'transaction' | 'security' | 'parth' | 'settings'>('wallet')
   const [wasmReady, setWasmReady] = useState(false)
   const [wasmError, setWasmError] = useState<string | null>(null)
 
@@ -21,6 +24,11 @@ function App() {
         console.error('WASM 加载失败:', err)
         setWasmError(err.message)
       })
+  }, [])
+
+  // 初始化钱包模式（Psy / EVM 兼容）
+  useEffect(() => {
+    initWalletMode().catch((e) => console.warn('initWalletMode failed', e))
   }, [])
 
   if (!wasmReady) {
@@ -39,15 +47,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-3 py-4">
         {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center justify-between bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <Shield className="w-10 h-10 text-blue-400" />
+        <header className="mb-4">
+          <div className="flex items-center justify-between bg-white/10 backdrop-blur-lg rounded-xl p-4 shadow-2xl">
+            <div className="flex items-center gap-2">
+              <Shield className="w-8 h-8 text-blue-400" />
               <div>
-                <h1 className="text-3xl font-bold text-white">PsyGuard</h1>
-                <p className="text-blue-200 text-sm">Psy 协议钱包插件</p>
+                <h1 className="text-xl font-bold text-white">PsyGuard</h1>
+                <p className="text-blue-200 text-xs">基于 Psy 协议的多链钱包</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -55,16 +63,19 @@ function App() {
                 <p className="text-xs text-blue-200">UPS 本地证明</p>
                 <p className="text-sm font-semibold text-green-400">● 已连接</p>
               </div>
-              <Settings className="w-6 h-6 text-blue-300 cursor-pointer hover:text-white transition" />
+              <SettingsIcon 
+                className="w-6 h-6 text-blue-300 cursor-pointer hover:text-white transition" 
+                onClick={() => setActiveTab('settings')}
+              />
             </div>
           </div>
         </header>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-2 mb-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
               activeTab === 'wallet'
                 ? 'bg-blue-500 text-white shadow-lg'
                 : 'bg-white/10 text-blue-200 hover:bg-white/20'
@@ -75,38 +86,52 @@ function App() {
           </button>
           <button
             onClick={() => setActiveTab('transaction')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
               activeTab === 'transaction'
                 ? 'bg-blue-500 text-white shadow-lg'
                 : 'bg-white/10 text-blue-200 hover:bg-white/20'
             }`}
           >
-            <Activity className="w-5 h-5" />
+            <Activity className="w-4 h-4" />
             交易
           </button>
           <button
+            onClick={() => setActiveTab('parth')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
+              activeTab === 'parth'
+                ? 'bg-blue-500 text-white shadow-lg'
+                : 'bg-white/10 text-blue-200 hover:bg-white/20'
+            }`}
+          >
+            <Inbox className="w-4 h-4" />
+            PARTH
+          </button>
+          <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
               activeTab === 'security'
                 ? 'bg-blue-500 text-white shadow-lg'
                 : 'bg-white/10 text-blue-200 hover:bg-white/20'
             }`}
           >
-            <Shield className="w-5 h-5" />
-            安全策略
+            <Shield className="w-4 h-4" />
+            安全
           </button>
         </div>
 
         {/* Content */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 shadow-2xl">
           {activeTab === 'wallet' && <WalletPanel />}
           {activeTab === 'transaction' && <TransactionPanel />}
+          {activeTab === 'parth' && <ParthTransferDemo />}
           {activeTab === 'security' && <SecurityPanel />}
+          {activeTab === 'settings' && <Settings />}
         </div>
 
         {/* Footer */}
-        <footer className="mt-8 text-center text-blue-200 text-sm">
-          <p>基于 Psy 协议 | UPS 本地证明 + End Cap 提交 + GUTA 聚合</p>
+        <footer className="mt-4 text-center text-blue-200 text-xs space-y-0.5">
+          <p className="font-semibold">Psy 协议钱包</p>
+          <p className="text-[10px]">零知识证明 · UPS 本地证明</p>
         </footer>
       </div>
     </div>
