@@ -1,0 +1,14 @@
+[package]
+name = "circuits-cfc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+# RISC Zero guest（注意：guest 需要特殊 target）
+risc0-zkvm = { workspace = true, default-features = false, features = ["std"] }
+
+[[bin]]
+name = "cfc-guest"
+path = "src/main.rs"

@@ -1,0 +1,33 @@
+[package]
+name = "realm-sink"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+agent-core = { path = "../agent-core" }
+agent-proofs = { path = "../agent-proofs" }
+
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+
+# Web 框架
+actix-web.workspace = true
+actix-cors.workspace = true
+
+# 日志
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# 数据库
+sled = "0.34"
+
+# UUID
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# 哈希
+blake3 = "1.5"
+
+# 时间
+chrono = "0.4"

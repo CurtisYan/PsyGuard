@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Psy Wallet",
+  "version": "0.1.0",
+  "description": "ZK-Native Wallet for Psy Protocol",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://eth-sepolia.g.alchemy.com/*",
+    "https://api.coingecko.com/*"
+  ]
+}

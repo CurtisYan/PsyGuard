@@ -1,0 +1,121 @@
+{
+  "common": {
+    "copy": "复制",
+    "cancel": "取消",
+    "confirm": "确认",
+    "back": "返回",
+    "next": "下一步",
+    "send": "发送",
+    "receive": "接收",
+    "session": "会话",
+    "settings": "设置"
+  },
+  "header": {
+    "network": "网络"
+  },
+  "balance": {
+    "total": "总余额"
+  },
+  "session": {
+    "start": "开始新会话",
+    "active": "会话 {{id}} 进行中",
+    "add_transaction": "添加交易",
+    "end_session": "结束会话",
+    "summary": "会话摘要"
+  },
+  "activity": {
+    "title": "活动记录",
+    "empty": "暂无活动记录",
+    "view_more": "查看更多活动记录",
+    "all_activities": "所有活动记录"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "network": "网络",
+    "sdkey": "SDKey 策略",
+    "privacy": "隐私",
+    "advanced": "高级",
+    "theme": "主题",
+    "theme_auto": "自动",
+    "theme_light": "白天",
+    "theme_dark": "夜间"
+  },
+  "send": {
+    "title": "发送",
+    "from": "发送地址",
+    "to": "接收地址",
+    "token": "代币",
+    "amount": "数量",
+    "max": "最大",
+    "sending": "发送中...",
+    "placeholder_address": "0x... 或 ENS 名称",
+    "placeholder_amount": "0.00"
+  },
+  "receive": {
+    "title": "接收",
+    "description": "向以下地址发送代币即可接收",
+    "copy_address": "复制地址",
+    "network_tip": "提示：请确保发送方使用相同的网络（Sepolia 测试网）"
+  },
+  "toast": {
+    "copy_success": "地址已复制",
+    "copy_failed": "复制失败",
+    "fill_required": "请填写完整信息",
+    "tx_submitted": "交易已提交",
+    "send_failed": "发送失败"
+  },
+  "price": {
+    "title": "币价",
+    "loading": "加载中...",
+    "error": "加载失败",
+    "refresh": "刷新"
+  },
+  "account": {
+    "title": "账户",
+    "search": "搜索",
+    "lock_wallet": "锁定钱包",
+    "delete": "删除账户",
+    "confirm_delete_title": "删除账户？",
+    "confirm_delete": "确定要删除此账户吗？您需要重新导入您的钱包。请确保您已保存好私钥！",
+    "add_account": "添加账户",
+    "rename": "重命名账户",
+    "enter_name": "输入账户名称",
+    "account_added": "账户添加成功",
+    "renamed": "账户重命名成功",
+    "deleted": "账户删除成功"
+  },
+  "onboarding": {
+    "key_copied": "私钥已复制"
+  },
+  "session": {
+    "title": "ZK 证明会话",
+    "status": "会话状态",
+    "active": "活跃",
+    "inactive": "未激活",
+    "start": "启动 UPS 会话",
+    "starting": "启动中...",
+    "started": "会话启动成功",
+    "start_failed": "会话启动失败",
+    "session_id": "会话 ID",
+    "block": "区块",
+    "tx_count": "交易数",
+    "cfc_calls": "CFC 调用",
+    "no_transactions": "暂无交易",
+    "add_cfc": "添加 CFC",
+    "end": "结束会话",
+    "ending": "结束中...",
+    "ended": "会话已结束，End Cap 已生成",
+    "end_failed": "会话结束失败",
+    "fill_required": "请填写所有字段",
+    "tx_added": "交易已添加",
+    "tx_failed": "添加交易失败",
+    "endcap_generated": "End Cap 已生成",
+    "endcap": "End Cap",
+    "cfc_type": "CFC 类型",
+    "to_address": "接收地址",
+    "from_address": "发送地址",
+    "token": "代币",
+    "amount": "数量"
+  }
+}

@@ -1,0 +1,43 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.db-*
+data/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# RISC Zero build artifacts
+.risc0/
+methods/guest/target/
+
+# Node.js / Frontend
+node_modules/
+dist/
+.parcel-cache/
+*.tsbuildinfo
+pnpm-lock.yaml
+
+# Realm Sink data
+realm_sink_data/

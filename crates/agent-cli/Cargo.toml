@@ -1,0 +1,22 @@
+[package]
+name = "agent-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+agent-core = { path = "../agent-core" }
+agent-proofs = { path = "../agent-proofs" }
+
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+ethers.workspace = true
+reqwest.workspace = true
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# 日志
+tracing.workspace = true
+tracing-subscriber.workspace = true
