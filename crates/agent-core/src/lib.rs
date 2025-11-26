@@ -8,9 +8,11 @@ pub mod hashing;
 pub mod error;
 pub mod datasource;
 pub mod session;
+pub mod executor;
 
 pub use types::*;
 pub use store::*;
 pub use error::*;
 pub use datasource::*;
 pub use session::*;
+pub use executor::*;

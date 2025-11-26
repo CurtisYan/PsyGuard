@@ -87,6 +87,24 @@ pub struct StateDelta {
     /// 可选：KV 明细（用于 DA 存储）
     #[serde(default)]
     pub kv_changes: Vec<(String, String)>, // (key, value)
+    /// 转账细节（用于链上执行）
+    #[serde(default)]
+    pub transfer_detail: Option<TransferDetail>,
+}
+
+/// 转账细节
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferDetail {
+    /// 转账类型
+    pub transfer_type: String, // "transfer_intent" 或 "claim_from"
+    /// 发送方地址
+    pub from: String,
+    /// 接收方地址
+    pub to: String,
+    /// 代币地址（ERC20）
+    pub token: String,
+    /// 转账数量
+    pub amount: u128,
 }
 
 /// UPS 结束产物（End Cap 的公开输入集合）

@@ -105,6 +105,13 @@ export default function SessionPage({ onBack }: SessionPageProps) {
   // 结束会话并生成 End Cap
   const handleEndSession = async () => {
     if (!session.sessionId) return
+    
+    // 获取当前用户的私钥
+    const { privateKey } = useWalletStore.getState()
+    if (!privateKey) {
+      showToast('未找到私钥，请重新登录', 'error')
+      return
+    }
 
     try {
       setLoading(true)
@@ -113,6 +120,7 @@ export default function SessionPage({ onBack }: SessionPageProps) {
       const response = await apiClient.sessionEnd({
         session_id: session.sessionId,
         next_nonce: 1,
+        private_key: privateKey,  // 传递私钥
       })
 
       setEndCapResult(response)
@@ -245,7 +253,60 @@ export default function SessionPage({ onBack }: SessionPageProps) {
         {/* End Cap 结果 */}
         {endCapResult && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">✅ {t('session.endcap_generated')}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {t('session.endcap_generated')}
+            </h3>
+            
+            {/* 链上执行结果 */}
+            {endCapResult.on_chain_executed && (
+              <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-medium">链上转账成功</span>
+                </div>
+                {endCapResult.tx_hashes && endCapResult.tx_hashes.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">交易哈希:</span>
+                    {endCapResult.tx_hashes.map((hash: string, idx: number) => (
+                      <div key={idx} className="text-xs font-mono bg-white dark:bg-gray-800 p-2 rounded break-all">
+                        {idx + 1}. {hash}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Realm Sink 结果 */}
+            {endCapResult.realm_header_id && (
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 mb-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <span className="font-medium">Realm Sink 接收成功</span>
+                </div>
+                <div className="text-xs font-mono bg-white dark:bg-gray-800 p-2 rounded break-all">
+                  {endCapResult.realm_header_id}
+                </div>
+              </div>
+            )}
+            
+            {/* 错误信息 */}
+            {endCapResult.on_chain_error && (
+              <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-700 dark:text-yellow-400 text-xs flex items-start gap-2">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="font-medium">链上执行失败: {endCapResult.on_chain_error}</span>
+              </div>
+            )}
+            
             <div className="space-y-2 text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg overflow-x-auto">
               <div>
                 <span className="text-gray-600 dark:text-gray-400">{t('session.endcap')}:</span>

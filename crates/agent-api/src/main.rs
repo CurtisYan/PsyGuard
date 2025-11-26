@@ -9,6 +9,7 @@ use agent_core::*;
 use std::sync::Arc;
 
 mod handlers;
+mod on_chain;
 
 #[derive(Clone)]
 struct AppState {

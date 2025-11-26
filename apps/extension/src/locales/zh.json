@@ -16,13 +16,6 @@
   "balance": {
     "total": "总余额"
   },
-  "session": {
-    "start": "开始新会话",
-    "active": "会话 {{id}} 进行中",
-    "add_transaction": "添加交易",
-    "end_session": "结束会话",
-    "summary": "会话摘要"
-  },
   "activity": {
     "title": "活动记录",
     "empty": "暂无活动记录",
@@ -79,11 +72,20 @@
     "confirm_delete_title": "删除账户？",
     "confirm_delete": "确定要删除此账户吗？您需要重新导入您的钱包。请确保您已保存好私钥！",
     "add_account": "添加账户",
+    "import_account": "导入账户",
+    "create_account": "创建新账户",
+    "import_title": "导入账户",
+    "private_key": "私钥",
+    "private_key_placeholder": "输入您的私钥（0x...）",
+    "import_button": "导入",
+    "demo_warning": "演示版本：请勿使用真实私钥",
     "rename": "重命名账户",
     "enter_name": "输入账户名称",
     "account_added": "账户添加成功",
+    "account_imported": "账户导入成功",
     "renamed": "账户重命名成功",
-    "deleted": "账户删除成功"
+    "deleted": "账户删除成功",
+    "invalid_private_key": "私钥格式不正确"
   },
   "onboarding": {
     "key_copied": "私钥已复制"
@@ -103,7 +105,9 @@
     "cfc_calls": "CFC 调用",
     "no_transactions": "暂无交易",
     "add_cfc": "添加 CFC",
+    "add_transaction": "添加交易",
     "end": "结束会话",
+    "end_session": "结束会话",
     "ending": "结束中...",
     "ended": "会话已结束，End Cap 已生成",
     "end_failed": "会话结束失败",
@@ -116,6 +120,7 @@
     "to_address": "接收地址",
     "from_address": "发送地址",
     "token": "代币",
-    "amount": "数量"
+    "amount": "数量",
+    "summary": "会话摘要"
   }
 }

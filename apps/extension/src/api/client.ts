@@ -63,6 +63,7 @@ export interface SessionAddTxResponse {
 export interface SessionEndRequest {
   session_id: string
   next_nonce: number
+  private_key: string  // 用户私钥，用于签名交易
 }
 
 export interface SessionEndResponse {

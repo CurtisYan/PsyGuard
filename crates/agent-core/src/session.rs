@@ -139,6 +139,15 @@ impl UpsSession {
         // 更新交易栈哈希
         let new_tx_stack = update_tx_stack(&self.header.tx_stack_hash, &tx_item_hash)?;
 
+        // 创建转账细节
+        let transfer_detail = Some(crate::TransferDetail {
+            transfer_type: call_kind.to_string(),
+            from: user_id.clone(),
+            to: address.clone(),
+            token: token.clone(),
+            amount,
+        });
+
         // 创建状态增量
         let delta = StateDelta {
             contract_id: contract_id.clone(),
@@ -146,6 +155,7 @@ impl UpsSession {
             new_cstate_root: new_cstate_root.clone(),
             slots_modified: 1, // 简化：假设每次修改1个槽
             kv_changes: vec![], // TODO: 实际的 KV 变更
+            transfer_detail,
         };
 
         // 更新 CSTATE 根

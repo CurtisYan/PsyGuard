@@ -16,13 +16,6 @@
   "balance": {
     "total": "Total Balance"
   },
-  "session": {
-    "start": "Start New Session",
-    "active": "Session {{id}} Active",
-    "add_transaction": "Add Transaction",
-    "end_session": "End Session",
-    "summary": "Session Summary"
-  },
   "activity": {
     "title": "Activity",
     "empty": "No recent activity",
@@ -79,11 +72,20 @@
     "confirm_delete_title": "Delete Account?",
     "confirm_delete": "Are you sure you want to delete this account? You will need to re-import your wallet. Make sure you have saved your private key!",
     "add_account": "Add Account",
+    "import_account": "Import Account",
+    "create_account": "Create New Account",
+    "import_title": "Import Account",
+    "private_key": "Private Key",
+    "private_key_placeholder": "Enter your private key (0x...)",
+    "import_button": "Import",
+    "demo_warning": "Demo version: Do not use real private keys",
     "rename": "Rename Account",
     "enter_name": "Enter account name",
     "account_added": "Account added successfully",
+    "account_imported": "Account imported successfully",
     "renamed": "Account renamed successfully",
-    "deleted": "Account deleted successfully"
+    "deleted": "Account deleted successfully",
+    "invalid_private_key": "Invalid private key format"
   },
   "onboarding": {
     "key_copied": "Private key copied"
@@ -103,7 +105,9 @@
     "cfc_calls": "CFC Calls",
     "no_transactions": "No transactions yet",
     "add_cfc": "Add CFC",
+    "add_transaction": "Add Transaction",
     "end": "End Session",
+    "end_session": "End Session",
     "ending": "Ending session...",
     "ended": "Session ended, End Cap generated",
     "end_failed": "Failed to end session",
@@ -116,6 +120,7 @@
     "to_address": "To Address",
     "from_address": "From Address",
     "token": "Token",
-    "amount": "Amount"
+    "amount": "Amount",
+    "summary": "Session Summary"
   }
 }

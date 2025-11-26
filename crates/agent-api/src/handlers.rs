@@ -186,6 +186,8 @@ pub async fn session_add_tx(
 pub struct SessionEndRequest {
     pub session_id: String,
     pub next_nonce: u64,
+    /// 用户私钥（用于签名交易）
+    pub private_key: String,
 }
 
 #[derive(Serialize)]
@@ -230,26 +232,64 @@ pub async fn session_end(
             // 提交到 Realm Sink
             let realm_result = submit_to_realm_sink(&submission).await;
             
-            match realm_result {
-                Ok(header_id) => {
+            // 执行链上转账（使用用户私钥）
+            let on_chain_result = crate::on_chain::execute_endcap_transfers(
+                &endcap,
+                &deltas,
+                &req.private_key
+            ).await;
+            
+            match (realm_result, on_chain_result) {
+                (Ok(header_id), Ok(on_chain)) => {
                     println!("✅ 已提交到 Realm Sink: {}", header_id);
+                    println!("✅ 链上转账完成: {} 笔", on_chain.tx_hashes.len());
                     HttpResponse::Ok().json(serde_json::json!({
                         "endcap": endcap,
                         "deltas": deltas,
                         "success": true,
                         "realm_header_id": header_id,
-                        "message": "End Cap generated and submitted to Realm Sink"
+                        "on_chain_executed": true,
+                        "tx_hashes": on_chain.tx_hashes,
+                        "message": "End Cap generated, submitted to Realm Sink, and executed on-chain"
                     }))
                 }
-                Err(e) => {
+                (Ok(header_id), Err(e)) => {
+                    println!("✅ 已提交到 Realm Sink: {}", header_id);
+                    println!("⚠️  链上执行失败: {}", e);
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "endcap": endcap,
+                        "deltas": deltas,
+                        "success": true,
+                        "realm_header_id": header_id,
+                        "on_chain_executed": false,
+                        "on_chain_error": format!("{}", e),
+                        "message": "End Cap generated and submitted, but on-chain execution failed"
+                    }))
+                }
+                (Err(e), Ok(on_chain)) => {
                     println!("⚠️  提交到 Realm Sink 失败: {}", e);
-                    // 即使提交失败，也返回 End Cap（离线模式）
+                    println!("✅ 链上转账完成: {} 笔", on_chain.tx_hashes.len());
                     HttpResponse::Ok().json(serde_json::json!({
                         "endcap": endcap,
                         "deltas": deltas,
                         "success": true,
                         "realm_error": format!("{}", e),
-                        "message": "End Cap generated (Realm Sink submission failed)"
+                        "on_chain_executed": true,
+                        "tx_hashes": on_chain.tx_hashes,
+                        "message": "End Cap generated and executed on-chain (Realm Sink failed)"
+                    }))
+                }
+                (Err(realm_err), Err(on_chain_err)) => {
+                    println!("⚠️  提交到 Realm Sink 失败: {}", realm_err);
+                    println!("⚠️  链上执行失败: {}", on_chain_err);
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "endcap": endcap,
+                        "deltas": deltas,
+                        "success": true,
+                        "realm_error": format!("{}", realm_err),
+                        "on_chain_executed": false,
+                        "on_chain_error": format!("{}", on_chain_err),
+                        "message": "End Cap generated (both Realm Sink and on-chain failed)"
                     }))
                 }
             }

@@ -110,8 +110,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             导入
           </button>
           
-          <p className="text-xs text-text-secondary">
-            ⚠️ 演示版本：请勿使用真实私钥
+          <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            演示版本：请勿使用真实私钥
           </p>
         </div>
       </div>
@@ -135,8 +138,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <p className="text-sm text-text-secondary mb-4">
               我们将为您生成一个新的钱包地址和私钥。
             </p>
-            <p className="text-xs text-warning">
-              ⚠️ 请妥善保管您的私钥，一旦丢失无法恢复！
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              请妥善保管您的私钥，一旦丢失无法恢复！
             </p>
           </div>
           
@@ -165,8 +171,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       
       <div className="space-y-4">
         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-red-600 mb-2">
-            ⚠️ 重要提示
+          <p className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-2">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            重要提示
           </p>
           <p className="text-xs text-red-600">
             请将以下私钥保存在安全的地方。一旦丢失，您将无法恢复钱包！

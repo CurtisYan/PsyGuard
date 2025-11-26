@@ -18,11 +18,15 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [renameAccountId, setRenameAccountId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null)
+  const [showAddAccountDialog, setShowAddAccountDialog] = useState(false)
+  const [showImportDialog, setShowImportDialog] = useState(false)
+  const [importPrivateKey, setImportPrivateKey] = useState('')
+  const [importError, setImportError] = useState('')
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // 如果正在显示重命名或删除对话框，不关闭
-      if (showRenameDialog || showDeleteConfirm) return
+      // 如果正在显示任何对话框，不关闭
+      if (showRenameDialog || showDeleteConfirm || showAddAccountDialog || showImportDialog) return
       
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onClose()
@@ -31,14 +35,44 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose, showRenameDialog, showDeleteConfirm])
+  }, [onClose, showRenameDialog, showDeleteConfirm, showAddAccountDialog, showImportDialog])
 
-  const handleAddAccount = () => {
+  useEffect(() => {
+    console.log('[AccountMenu] showImportDialog changed:', showImportDialog)
+  }, [showImportDialog])
+
+  useEffect(() => {
+    console.log('[AccountMenu] showAddAccountDialog changed:', showAddAccountDialog)
+  }, [showAddAccountDialog])
+
+  const handleShowAddDialog = () => {
+    setShowAddAccountDialog(true)
+  }
+
+  const handleCreateNewAccount = () => {
     const wallet = ethers.Wallet.createRandom()
     const accountNumber = accounts.length + 1
     addAccount(`Psy Account ${accountNumber}`, wallet.address, wallet.privateKey)
     showToast(t('account.account_added'), 'success')
+    setShowAddAccountDialog(false)
     onClose()
+  }
+
+  const handleImportAccount = () => {
+    setImportError('')
+    
+    try {
+      const wallet = new ethers.Wallet(importPrivateKey.trim())
+      const accountNumber = accounts.length + 1
+      addAccount(`Imported Account ${accountNumber}`, wallet.address, wallet.privateKey)
+      showToast(t('account.account_imported'), 'success')
+      setImportPrivateKey('')
+      setShowImportDialog(false)
+      setShowAddAccountDialog(false)
+      onClose()
+    } catch (err) {
+      setImportError('Invalid private key format')
+    }
   }
 
   const handleSwitchAccount = (accountId: string) => {
@@ -113,7 +147,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             onClick={onClose}
             className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -140,7 +176,11 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900 dark:text-gray-100">{account.name}</span>
-                      {isCurrent && <span className="text-xs text-green-600 dark:text-green-400">✓</span>}
+                      {isCurrent && (
+                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
                     </div>
                     <div className="font-mono text-xs text-gray-600 dark:text-gray-400 truncate">
                       {account.address.slice(0, 10)}...{account.address.slice(-8)}
@@ -195,7 +235,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         {/* 添加账户按钮 */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <button
-            onClick={handleAddAccount}
+            onClick={handleShowAddDialog}
             className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 font-medium"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,6 +298,107 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               >
                 {t('common.confirm')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 添加账户选择对话框 */}
+      {showAddAccountDialog && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              {t('account.add_account')}
+            </h3>
+            <div className="space-y-3">
+              <button
+                onClick={handleCreateNewAccount}
+                className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t('account.create_account')}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  console.log('[AccountMenu] Opening import dialog')
+                  setShowAddAccountDialog(false)
+                  setShowImportDialog(true)
+                }}
+                className="w-full px-4 py-3 border-2 border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                {t('account.import_account')}
+              </button>
+              <button
+                onClick={() => setShowAddAccountDialog(false)}
+                className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 导入账户对话框 */}
+      {showImportDialog && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              {t('account.import_title')}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('account.private_key')}
+                </label>
+                <textarea
+                  value={importPrivateKey}
+                  onChange={(e) => setImportPrivateKey(e.target.value)}
+                  placeholder={t('account.private_key_placeholder')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm h-24"
+                  autoFocus
+                />
+              </div>
+              
+              {importError && (
+                <div className="text-red-600 dark:text-red-400 text-sm">
+                  {t('account.invalid_private_key')}
+                </div>
+              )}
+              
+              <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {t('account.demo_warning')}
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowImportDialog(false)
+                    setImportPrivateKey('')
+                    setImportError('')
+                    setShowAddAccountDialog(true)
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={handleImportAccount}
+                  disabled={!importPrivateKey.trim()}
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {t('account.import_button')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
