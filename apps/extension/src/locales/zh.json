@@ -8,7 +8,9 @@
     "send": "发送",
     "receive": "接收",
     "session": "会话",
-    "settings": "设置"
+    "settings": "设置",
+    "assets": "资产",
+    "loading": "加载中..."
   },
   "header": {
     "network": "网络"
@@ -43,7 +45,13 @@
     "max": "最大",
     "sending": "发送中...",
     "placeholder_address": "0x... 或 ENS 名称",
-    "placeholder_amount": "0.00"
+    "placeholder_amount": "0.00",
+    "error_recipient_required": "请输入接收地址",
+    "error_invalid_address": "地址格式不正确",
+    "error_amount_required": "请输入数量",
+    "error_invalid_amount": "数量无效",
+    "error_insufficient_balance": "余额不足",
+    "error_invalid_input": "输入有误，请检查"
   },
   "receive": {
     "title": "接收",
@@ -85,10 +93,52 @@
     "account_imported": "账户导入成功",
     "renamed": "账户重命名成功",
     "deleted": "账户删除成功",
-    "invalid_private_key": "私钥格式不正确"
+    "invalid_private_key": "私钥格式不正确",
+    "export_private_key": "私钥",
+    "export_warning_title": "切勿分享您的私钥",
+    "export_warning_message": "This key grants full control of your account for the associated chain.",
+    "enter_password": "输入您的密码",
+    "export_error_no_password": "没有设置密码",
+    "export_error_wrong_password": "密码错误",
+    "export_error_not_found": "账户不存在",
+    "export_error_failed": "导出失败",
+    "private_key_copied": "私钥已复制到剪贴板"
   },
   "onboarding": {
-    "key_copied": "私钥已复制"
+    "welcome_title": "欢迎使用 Psy Wallet",
+    "welcome_subtitle": "ZK-Native 钱包，保护您的隐私",
+    "create_new": "创建新钱包",
+    "import_existing": "导入现有钱包",
+    "import_title": "导入钱包",
+    "create_title": "创建新钱包",
+    "save_key_title": "保存私钥",
+    "private_key": "私钥",
+    "private_key_placeholder": "输入您的私钥（0x...）",
+    "import_button": "导入",
+    "demo_warning": "演示版本：请勿使用真实私钥",
+    "create_description": "我们将为您生成一个新的钱包地址和私钥。",
+    "save_key_warning": "请将以下私钥保存在安全的地方。一旦丢失，您将无法恢复钱包！",
+    "key_warning": "请妃善保管您的私钥，一旦丢失无法恢复！",
+    "important_notice": "重要提示",
+    "your_address": "您的地址",
+    "your_private_key": "您的私钥",
+    "copy_key": "复制私钥",
+    "key_copied": "私钥已复制",
+    "confirm_saved": "我已将私钥保存在安全的地方，并理解一旦丢失无法找回",
+    "continue": "我已保存，继续",
+    "generate_wallet": "生成钱包",
+    "set_password": "设置密码",
+    "password": "密码",
+    "password_placeholder": "输入密码（至少6位）",
+    "confirm_password": "确认密码",
+    "confirm_password_placeholder": "再次输入密码",
+    "password_description": "设置一个强密码来保护您的钱包。该密码将用于加密您的私钥。",
+    "password_requirement": "密码至少需要6个字符",
+    "error_confirm_saved": "请确认已保存私钥",
+    "error_invalid_key": "私钥格式不正确",
+    "error_password_too_short": "密码至少需要6个字符",
+    "error_password_mismatch": "两次输入的密码不一致",
+    "error_initialize_failed": "初始化失败，请重试"
   },
   "session": {
     "title": "ZK 证明会话",

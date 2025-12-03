@@ -10,11 +10,16 @@ i18n
       en: { translation: en },
       zh: { translation: zh },
     },
-    lng: 'en',
+    lng: localStorage.getItem('psy-language') || 'en', // 从 localStorage 读取，默认英文
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
   })
+
+// 监听语言变化，保存到 localStorage
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('psy-language', lng)
+})
 
 export default i18n

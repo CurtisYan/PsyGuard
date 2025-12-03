@@ -23,6 +23,7 @@ export interface Checkpoint {
 export interface PriceFeed {
   symbol: string
   usd: number
+  usd_24h_change?: number  // 24小时涨跌百分比
   updated_at?: number
 }
 
@@ -120,16 +121,19 @@ class ApiClient {
 
     const ids = symbols.map(s => coinGeckoIds[s]).filter(Boolean).join(',')
     
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    )
+    // 添加 include_24hr_change 参数获取真实涨跌数据
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
     
-    if (!response.ok) throw new Error('Failed to fetch from CoinGecko')
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from CoinGecko: ${response.status}`)
+    }
+    
     const data = await response.json()
 
     const results: PriceFeed[] = []
@@ -139,6 +143,7 @@ class ApiClient {
         results.push({
           symbol,
           usd: data[id].usd,
+          usd_24h_change: data[id].usd_24h_change,  // 真实涨跌数据
           updated_at: Date.now(),
         })
       }

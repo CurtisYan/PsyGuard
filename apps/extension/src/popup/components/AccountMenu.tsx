@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ethers } from 'ethers'
 import { useWalletStore } from '../../store/wallet'
+import { decryptPrivateKey, verifyPassword } from '../../utils/crypto'
 import ConfirmDialog from './ConfirmDialog'
 
 interface AccountMenuProps {
@@ -11,6 +12,7 @@ interface AccountMenuProps {
 export default function AccountMenu({ onClose }: AccountMenuProps) {
   const { t } = useTranslation()
   const { accounts, currentAccountId, switchAccount, renameAccount, deleteAccount, addAccount, showToast } = useWalletStore()
+  const passwordHash = useWalletStore((state) => state.passwordHash)
   const menuRef = useRef<HTMLDivElement>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null)
@@ -22,11 +24,15 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [importPrivateKey, setImportPrivateKey] = useState('')
   const [importError, setImportError] = useState('')
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [exportAccountId, setExportAccountId] = useState<string | null>(null)
+  const [exportPassword, setExportPassword] = useState('')
+  const [exportError, setExportError] = useState('')
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       // 如果正在显示任何对话框，不关闭
-      if (showRenameDialog || showDeleteConfirm || showAddAccountDialog || showImportDialog) return
+      if (showRenameDialog || showDeleteConfirm || showAddAccountDialog || showImportDialog || showExportDialog) return
       
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onClose()
@@ -35,7 +41,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose, showRenameDialog, showDeleteConfirm, showAddAccountDialog, showImportDialog])
+  }, [onClose, showRenameDialog, showDeleteConfirm, showAddAccountDialog, showImportDialog, showExportDialog])
 
   useEffect(() => {
     console.log('[AccountMenu] showImportDialog changed:', showImportDialog)
@@ -72,6 +78,48 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       onClose()
     } catch (err) {
       setImportError('Invalid private key format')
+    }
+  }
+  
+  const handleExportPrivateKey = async () => {
+    if (!exportAccountId || !exportPassword) return
+    
+    setExportError('')
+    
+    try {
+      // 验证密码
+      if (!passwordHash) {
+        setExportError(t('account.export_error_no_password'))
+        return
+      }
+      
+      const isValid = await verifyPassword(exportPassword, passwordHash)
+      if (!isValid) {
+        setExportError(t('account.export_error_wrong_password'))
+        return
+      }
+      
+      // 解密私钥
+      const account = accounts.find(acc => acc.id === exportAccountId)
+      if (!account) {
+        setExportError(t('account.export_error_not_found'))
+        return
+      }
+      
+      const privateKey = await decryptPrivateKey(account.encryptedPrivateKey, exportPassword)
+      
+      // 复制到剪贴板
+      await navigator.clipboard.writeText(privateKey)
+      showToast(t('account.private_key_copied'), 'success')
+      
+      // 关闭对话框
+      setShowExportDialog(false)
+      setExportPassword('')
+      setExportError('')
+      setExportAccountId(null)
+    } catch (error) {
+      console.error('Export private key error:', error)
+      setExportError(t('account.export_error_failed'))
     }
   }
 
@@ -182,7 +230,16 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                         </svg>
                       )}
                     </div>
-                    <div className="font-mono text-xs text-gray-600 dark:text-gray-400 truncate">
+                    <div 
+                      className="font-mono text-xs text-gray-600 dark:text-gray-400"
+                      title={account.address}
+                      style={{ 
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        cursor: 'help'
+                      }}
+                    >
                       {account.address.slice(0, 10)}...{account.address.slice(-8)}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
@@ -213,6 +270,17 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg"
                         >
                           {t('account.rename')}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExportAccountId(account.id)
+                            setShowExportDialog(true)
+                            setShowOptionsMenu(null)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        >
+                          {t('account.export_private_key')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -397,6 +465,85 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                   className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {t('account.import_button')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 导出私钥对话框 */}
+      {showExportDialog && exportAccountId && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {accounts.find(acc => acc.id === exportAccountId)?.name} / {t('account.export_private_key')}
+            </h3>
+            
+            {/* 警告提示 */}
+            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-3 mb-4">
+              <div className="flex gap-2">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-red-800 dark:text-red-300">
+                    {t('account.export_warning_title')}
+                  </p>
+                  <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                    {t('account.export_warning_message')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('account.enter_password')}
+                </label>
+                <input
+                  type="password"
+                  value={exportPassword}
+                  onChange={(e) => setExportPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleExportPrivateKey()
+                    if (e.key === 'Escape') {
+                      setShowExportDialog(false)
+                      setExportPassword('')
+                      setExportError('')
+                    }
+                  }}
+                />
+              </div>
+              
+              {exportError && (
+                <div className="text-red-600 dark:text-red-400 text-sm">
+                  {exportError}
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowExportDialog(false)
+                    setExportPassword('')
+                    setExportError('')
+                    setExportAccountId(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={handleExportPrivateKey}
+                  disabled={!exportPassword.trim()}
+                  className="flex-1 px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {t('common.confirm')}
                 </button>
               </div>
             </div>

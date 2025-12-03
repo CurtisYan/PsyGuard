@@ -53,7 +53,10 @@ export default function Header({ onSettingsClick }: HeaderProps) {
               </span>
               <span className="text-gray-500 dark:text-gray-400">▼</span>
             </div>
-            <div className="text-xs font-mono text-gray-500 dark:text-gray-400">
+            <div 
+              className="text-xs font-mono text-gray-500 dark:text-gray-400"
+              title={address || ''}
+            >
               {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''}
             </div>
           </div>

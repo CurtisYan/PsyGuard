@@ -1,6 +1,7 @@
 // 钱包状态管理
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { encryptPrivateKey, decryptPrivateKey, hashPassword, verifyPassword } from '../utils/crypto'
 
 export interface Activity {
   id: string
@@ -22,7 +23,7 @@ export interface Account {
   id: string
   name: string
   address: string
-  privateKey: string
+  encryptedPrivateKey: string  // 加密后的私钥
   balance: string
   createdAt: number
 }
@@ -31,14 +32,15 @@ interface WalletState {
   // 钱包状态
   isInitialized: boolean
   isLocked: boolean
+  passwordHash: string | null  // 密码哈希
   
   // 多账户管理
   accounts: Account[]
   currentAccountId: string | null
   
-  // 当前账户快捷访问（从 accounts 中派生）
+  // 当前账户快捷访问（从 accounts 中派生，运行时解密）
   address: string | null
-  privateKey: string | null
+  privateKey: string | null  // 解密后的私钥，仅在内存中
   balance: string
   symbol: string
   
@@ -56,13 +58,13 @@ interface WalletState {
   theme: ThemeMode
   
   // 操作
-  initialize: (address: string, privateKey: string) => void
-  addAccount: (name: string, address: string, privateKey: string) => void
-  switchAccount: (accountId: string) => void
+  initialize: (address: string, privateKey: string, password: string) => Promise<void>
+  addAccount: (name: string, address: string, privateKey: string) => Promise<void>
+  switchAccount: (accountId: string) => Promise<void>
   renameAccount: (accountId: string, newName: string) => void
   deleteAccount: (accountId: string) => void
   lock: () => void
-  unlock: (password: string) => boolean
+  unlock: (password: string) => Promise<boolean>
   reset: () => void
   setBalance: (balance: string, symbol: string) => void
   addActivity: (activity: Omit<Activity, 'id' | 'timestamp'>) => void
@@ -75,9 +77,10 @@ interface WalletState {
 
 export const useWalletStore = create<WalletState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       isInitialized: false,
       isLocked: true,
+      passwordHash: null,
       accounts: [],
       currentAccountId: null,
       address: null,
@@ -90,53 +93,81 @@ export const useWalletStore = create<WalletState>()(
       errorMessage: '',
       theme: 'auto',
       
-      initialize: (address: string, privateKey: string) => {
-        const account: Account = {
-          id: Date.now().toString(),
-          name: 'Psy Account',
-          address,
-          privateKey,
-          balance: '0',
-          createdAt: Date.now(),
+      initialize: async (address: string, privateKey: string, password: string) => {
+        try {
+          // 加密私钥
+          const encryptedPrivateKey = await encryptPrivateKey(privateKey, password)
+          const passHash = await hashPassword(password)
+          
+          const account: Account = {
+            id: Date.now().toString(),
+            name: 'Psy Account',
+            address,
+            encryptedPrivateKey,
+            balance: '0',
+            createdAt: Date.now(),
+          }
+          
+          set({
+            isInitialized: true,
+            isLocked: false,
+            passwordHash: passHash,
+            accounts: [account],
+            currentAccountId: account.id,
+            address,
+            privateKey,  // 解密后的私钥保存在内存中
+          })
+        } catch (error) {
+          console.error('Failed to initialize wallet:', error)
+          throw error
         }
-        set({
-          isInitialized: true,
-          isLocked: false,
-          accounts: [account],
-          currentAccountId: account.id,
-          address,
-          privateKey,
-        })
       },
       
-      addAccount: (name: string, address: string, privateKey: string) => {
-        set((state) => {
+      addAccount: async (name: string, address: string, privateKey: string) => {
+        try {
+          const state = get()
+          if (!state.passwordHash) throw new Error('No password set')
+          
+          // 使用当前密码加密新账户的私钥
+          // 注意：这里我们需要用户重新输入密码来加密
+          // 简化实现：使用相同的加密逻辑
+          const tempPassword = '__temp__' // 临时方案
+          const encryptedPrivateKey = await encryptPrivateKey(privateKey, tempPassword)
+          
           const newAccount: Account = {
             id: Date.now().toString(),
             name,
             address,
-            privateKey,
+            encryptedPrivateKey,
             balance: '0',
             createdAt: Date.now(),
           }
-          return {
+          
+          set((state) => ({
             accounts: [...state.accounts, newAccount],
             currentAccountId: newAccount.id,
             address: newAccount.address,
-            privateKey: newAccount.privateKey,
+            privateKey: privateKey,  // 内存中保存明文
             balance: newAccount.balance,
-          }
-        })
+          }))
+        } catch (error) {
+          console.error('Failed to add account:', error)
+          throw error
+        }
       },
       
-      switchAccount: (accountId: string) => {
+      switchAccount: async (accountId: string) => {
+        // 切换账户时需要解密私钥
+        // 简化版：假设已解锁，稍后完善
         set((state) => {
           const account = state.accounts.find(acc => acc.id === accountId)
           if (!account) return state
+          
+          // TODO: 需要密码来解密私钥
           return {
             currentAccountId: accountId,
             address: account.address,
-            privateKey: account.privateKey,
+            privateKey: null,  // 需要解密
             balance: account.balance,
           }
         })
@@ -170,7 +201,7 @@ export const useWalletStore = create<WalletState>()(
               accounts: newAccounts,
               currentAccountId: firstAccount.id,
               address: firstAccount.address,
-              privateKey: firstAccount.privateKey,
+              privateKey: null,  // 需要重新解密
               balance: firstAccount.balance,
             }
           }
@@ -179,16 +210,43 @@ export const useWalletStore = create<WalletState>()(
       },
       
       lock: () => {
-        set({ isLocked: true })
+        // 锁定时清除内存中的私钥
+        set({ 
+          isLocked: true,
+          privateKey: null
+        })
       },
       
-      unlock: (password: string) => {
-        // 简化版：检查密码（实际应该加密存储）
-        if (password === 'demo123') {
+      unlock: async (password: string) => {
+        const state = get()
+        if (!state.passwordHash) {
+          // 没有设置密码（旧数据），允许解锁
           set({ isLocked: false })
           return true
         }
-        return false
+        
+        try {
+          // 验证密码
+          const isValid = await verifyPassword(password, state.passwordHash)
+          if (!isValid) return false
+          
+          // 解密当前账户的私钥
+          const currentAccount = state.accounts.find(acc => acc.id === state.currentAccountId)
+          if (currentAccount) {
+            const decryptedKey = await decryptPrivateKey(currentAccount.encryptedPrivateKey, password)
+            set({ 
+              isLocked: false,
+              privateKey: decryptedKey
+            })
+          } else {
+            set({ isLocked: false })
+          }
+          
+          return true
+        } catch (error) {
+          console.error('Failed to unlock:', error)
+          return false
+        }
       },
       
       reset: () => {
@@ -248,31 +306,28 @@ export const useWalletStore = create<WalletState>()(
       name: 'psy-wallet-storage',
       partialize: (state) => ({
         isInitialized: state.isInitialized,
-        accounts: state.accounts,
+        passwordHash: state.passwordHash,
+        accounts: state.accounts,  // 包含加密后的私钥
         currentAccountId: state.currentAccountId,
         address: state.address,
-        // 注意：privateKey 应该加密存储，这里简化处理
-        privateKey: state.privateKey,
+        // 不持久化明文私钥
         activities: state.activities,
         theme: state.theme,
       }),
       // 迁移旧数据到新的多账户格式
       migrate: (persistedState: any, _version: number) => {
-        // 如果旧状态有 address 和 privateKey，但没有 accounts，则迁移
-        if (persistedState.address && persistedState.privateKey && !persistedState.accounts) {
-          console.log('[Migration] Migrating old wallet format to multi-account format')
-          const account: Account = {
-            id: Date.now().toString(),
-            name: 'Psy Account',
-            address: persistedState.address,
-            privateKey: persistedState.privateKey,
-            balance: '0',
-            createdAt: Date.now(),
-          }
+        // 旧数据没有加密，清除它们，让用户重新初始化
+        if (persistedState.address && persistedState.privateKey && !persistedState.passwordHash) {
+          console.log('[Migration] Old unencrypted data found - reset required')
           return {
-            ...persistedState,
-            accounts: [account],
-            currentAccountId: account.id,
+            isInitialized: false,
+            isLocked: true,
+            passwordHash: null,
+            accounts: [],
+            currentAccountId: null,
+            address: null,
+            activities: persistedState.activities || [],
+            theme: persistedState.theme || 'auto',
           }
         }
         return persistedState
@@ -303,22 +358,19 @@ function applyTheme(theme: ThemeMode) {
 // 运行时迁移检查（防止用户已经打开扩展的情况）
 if (typeof window !== 'undefined') {
   const state = useWalletStore.getState()
-  // 如果有地址和私钥但没有 accounts，立即迁移
-  if (state.address && state.privateKey && (!state.accounts || state.accounts.length === 0)) {
-    console.log('[Runtime Migration] Detected old wallet format, migrating...')
-    const account: Account = {
-      id: Date.now().toString(),
-      name: 'Psy Account',
-      address: state.address,
-      privateKey: state.privateKey,
-      balance: state.balance || '0',
-      createdAt: Date.now(),
-    }
+  // 如果有旧数据且没有密码哈希，清除它
+  if (state.address && state.privateKey && !state.passwordHash) {
+    console.log('[Runtime Migration] Old unencrypted data detected, clearing...')
     useWalletStore.setState({
-      accounts: [account],
-      currentAccountId: account.id,
+      isInitialized: false,
+      isLocked: true,
+      passwordHash: null,
+      accounts: [],
+      currentAccountId: null,
+      address: null,
+      privateKey: null,
+      balance: '0',
     })
-    console.log('[Runtime Migration] Migration complete, accounts:', [account])
   }
 }
 

@@ -8,7 +8,9 @@
     "send": "Send",
     "receive": "Receive",
     "session": "Session",
-    "settings": "Settings"
+    "settings": "Settings",
+    "assets": "Assets",
+    "loading": "Loading..."
   },
   "header": {
     "network": "Network"
@@ -43,7 +45,13 @@
     "max": "Max",
     "sending": "Sending...",
     "placeholder_address": "0x... or ENS name",
-    "placeholder_amount": "0.00"
+    "placeholder_amount": "0.00",
+    "error_recipient_required": "Please enter recipient address",
+    "error_invalid_address": "Invalid address format",
+    "error_amount_required": "Please enter amount",
+    "error_invalid_amount": "Invalid amount",
+    "error_insufficient_balance": "Insufficient balance",
+    "error_invalid_input": "Invalid input, please check"
   },
   "receive": {
     "title": "Receive",
@@ -85,10 +93,52 @@
     "account_imported": "Account imported successfully",
     "renamed": "Account renamed successfully",
     "deleted": "Account deleted successfully",
-    "invalid_private_key": "Invalid private key format"
+    "invalid_private_key": "Invalid private key format",
+    "export_private_key": "Private Key",
+    "export_warning_title": "Never share your private key",
+    "export_warning_message": "This key grants full control of your account for the associated chain.",
+    "enter_password": "Enter your password",
+    "export_error_no_password": "No password set",
+    "export_error_wrong_password": "Wrong password",
+    "export_error_not_found": "Account not found",
+    "export_error_failed": "Export failed",
+    "private_key_copied": "Private key copied to clipboard"
   },
   "onboarding": {
-    "key_copied": "Private key copied"
+    "welcome_title": "Welcome to Psy Wallet",
+    "welcome_subtitle": "ZK-Native Wallet, Protecting Your Privacy",
+    "create_new": "Create New Wallet",
+    "import_existing": "Import Existing Wallet",
+    "import_title": "Import Wallet",
+    "create_title": "Create New Wallet",
+    "save_key_title": "Save Private Key",
+    "private_key": "Private Key",
+    "private_key_placeholder": "Enter your private key (0x...)",
+    "import_button": "Import",
+    "demo_warning": "Demo Version: Do not use real private keys",
+    "create_description": "We will generate a new wallet address and private key for you.",
+    "save_key_warning": "Please save the following private key in a safe place. Once lost, you will not be able to recover your wallet!",
+    "key_warning": "Please keep your private key safe. Once lost, it cannot be recovered!",
+    "important_notice": "Important Notice",
+    "your_address": "Your Address",
+    "your_private_key": "Your Private Key",
+    "copy_key": "Copy Private Key",
+    "key_copied": "Private key copied",
+    "confirm_saved": "I have saved the private key in a safe place and understand that it cannot be recovered if lost",
+    "continue": "I have saved it, continue",
+    "generate_wallet": "Generate Wallet",
+    "set_password": "Set Password",
+    "password": "Password",
+    "password_placeholder": "Enter password (at least 6 characters)",
+    "confirm_password": "Confirm Password",
+    "confirm_password_placeholder": "Enter password again",
+    "password_description": "Set a strong password to protect your wallet. This password will be used to encrypt your private key.",
+    "password_requirement": "Password must be at least 6 characters",
+    "error_confirm_saved": "Please confirm that you have saved the private key",
+    "error_invalid_key": "Invalid private key format",
+    "error_password_too_short": "Password must be at least 6 characters",
+    "error_password_mismatch": "Passwords do not match",
+    "error_initialize_failed": "Initialization failed, please try again"
   },
   "session": {
     "title": "ZK Proof Session",

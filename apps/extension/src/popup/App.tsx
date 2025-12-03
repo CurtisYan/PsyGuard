@@ -6,7 +6,7 @@ import Header from './components/Header'
 import BalanceCard from './components/BalanceCard'
 import QuickActions from './components/QuickActions'
 import ActivityFeed from './components/ActivityFeed'
-import TokenPrice from './components/TokenPrice'
+import TokenList from './components/TokenList'
 import Toast from './components/Toast'
 import ErrorRetry from './components/ErrorRetry'
 import SessionPage from './pages/SessionPage'
@@ -136,8 +136,8 @@ function App() {
                   onViewMore={() => setCurrentView('activity')}
                 />
                 
-                {/* 币价 */}
-                <TokenPrice />
+                {/* 代币资产 */}
+                <TokenList />
               </div>
             </>
           )}
