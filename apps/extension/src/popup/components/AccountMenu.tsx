@@ -23,16 +23,33 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [showAddAccountDialog, setShowAddAccountDialog] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [importPrivateKey, setImportPrivateKey] = useState('')
-  const [importError, setImportError] = useState('')
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [exportAccountId, setExportAccountId] = useState<string | null>(null)
   const [exportPassword, setExportPassword] = useState('')
   const [exportError, setExportError] = useState('')
+  const [importError, setImportError] = useState('')
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmError, setConfirmError] = useState('')
+  const [pendingAccount, setPendingAccount] = useState<{
+    name: string
+    address: string
+    privateKey: string
+  } | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    show: boolean
+    accountId: string | null
+    top: number
+    left: number
+    width: number
+    arrowLeft: number
+  }>({ show: false, accountId: null, top: 0, left: 0, width: 0, arrowLeft: 0 })
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       // 如果正在显示任何对话框，不关闭
-      if (showRenameDialog || showDeleteConfirm || showAddAccountDialog || showImportDialog || showExportDialog) return
+      if (showRenameDialog || showDeleteConfirm || showAddAccountDialog || showImportDialog || showExportDialog || showPasswordConfirm) return
       
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onClose()
@@ -41,15 +58,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose, showRenameDialog, showDeleteConfirm, showAddAccountDialog, showImportDialog, showExportDialog])
-
-  useEffect(() => {
-    console.log('[AccountMenu] showImportDialog changed:', showImportDialog)
-  }, [showImportDialog])
-
-  useEffect(() => {
-    console.log('[AccountMenu] showAddAccountDialog changed:', showAddAccountDialog)
-  }, [showAddAccountDialog])
+  }, [onClose, showRenameDialog, showDeleteConfirm, showAddAccountDialog, showImportDialog, showExportDialog, showPasswordConfirm])
 
   const handleShowAddDialog = () => {
     setShowAddAccountDialog(true)
@@ -58,26 +67,53 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const handleCreateNewAccount = () => {
     const wallet = ethers.Wallet.createRandom()
     const accountNumber = accounts.length + 1
-    addAccount(`Psy Account ${accountNumber}`, wallet.address, wallet.privateKey)
-    showToast(t('account.account_added'), 'success')
+    setPendingAccount({
+      name: `Psy Account ${accountNumber}`,
+      address: wallet.address,
+      privateKey: wallet.privateKey
+    })
     setShowAddAccountDialog(false)
-    onClose()
+    setShowPasswordConfirm(true)
   }
 
   const handleImportAccount = () => {
-    setImportError('')
-    
     try {
       const wallet = new ethers.Wallet(importPrivateKey.trim())
       const accountNumber = accounts.length + 1
-      addAccount(`Imported Account ${accountNumber}`, wallet.address, wallet.privateKey)
-      showToast(t('account.account_imported'), 'success')
+      setPendingAccount({
+        name: `Imported Account ${accountNumber}`,
+        address: wallet.address,
+        privateKey: wallet.privateKey
+      })
       setImportPrivateKey('')
       setShowImportDialog(false)
       setShowAddAccountDialog(false)
+      setImportError('')
+      setShowPasswordConfirm(true)
+    } catch (error) {
+      setImportError(t('account.import_error'))
+    }
+  }
+  
+  const handleConfirmPassword = async () => {
+    if (!pendingAccount || !confirmPassword) return
+    
+    setConfirmError('')
+    
+    try {
+      await addAccount(
+        pendingAccount.name,
+        pendingAccount.address,
+        pendingAccount.privateKey,
+        confirmPassword
+      )
+      showToast(t('account.account_added'), 'success')
+      setShowPasswordConfirm(false)
+      setConfirmPassword('')
+      setPendingAccount(null)
       onClose()
-    } catch (err) {
-      setImportError('Invalid private key format')
+    } catch (error) {
+      setConfirmError(t('account.export_error_wrong_password'))
     }
   }
   
@@ -153,12 +189,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
 
   const confirmDelete = () => {
     if (deleteAccountId) {
-      console.log('[Delete] Before delete, accounts:', accounts.length, 'deleteAccountId:', deleteAccountId)
       const isLastAccount = accounts.length === 1
       
       // 执行删除
       deleteAccount(deleteAccountId)
-      console.log('[Delete] After delete called')
       
       // 显示提示
       showToast(t('account.deleted'), 'success')
@@ -175,7 +209,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       // 如果删除的是最后一个账户，重新加载页面回到欢迎页
       if (isLastAccount) {
         setTimeout(() => {
-          console.log('[Delete] Reloading page for last account')
           window.location.reload()
         }, 600)
       }
@@ -186,10 +219,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
     <div className="fixed inset-0 bg-black/20 z-50 flex items-start justify-center pt-16">
       <div 
         ref={menuRef}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-80 max-h-[500px] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-80 max-h-[500px] flex flex-col overflow-hidden"
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('account.title')}</h3>
           <button 
             onClick={onClose}
@@ -201,8 +234,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
           </button>
         </div>
 
-        {/* 账户列表 */}
-        <div className="p-2 space-y-2">
+        {/* 账户列表 - 可滚动区域 */}
+        <div className="overflow-y-auto flex-1">
+          <div className="p-2 space-y-2">
           {accounts.map((account) => {
             const isCurrent = account.id === currentAccountId
             return (
@@ -230,17 +264,51 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                         </svg>
                       )}
                     </div>
-                    <div 
-                      className="font-mono text-xs text-gray-600 dark:text-gray-400"
-                      title={account.address}
-                      style={{ 
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        cursor: 'help'
-                      }}
-                    >
-                      {account.address.slice(0, 10)}...{account.address.slice(-8)}
+                    <div className="relative">
+                      <div 
+                        className="font-mono text-xs text-gray-600 dark:text-gray-400 truncate cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          const containerRect = menuRef.current?.getBoundingClientRect()
+                          if (!containerRect) return
+                          
+                          // 估算悬浮框宽度（地址42字符 * 每字符约7px + padding 24px）
+                          const addressLength = account.address.length
+                          const tooltipWidth = addressLength * 7 + 24
+                          
+                          // 计算悬浮框左侧位置（尽量居中对齐缩略地址）
+                          const elementCenter = rect.left + rect.width / 2
+                          let tooltipLeft = elementCenter - tooltipWidth / 2
+                          
+                          // 确保不超出容器左边界
+                          const minLeft = containerRect.left + 16
+                          if (tooltipLeft < minLeft) tooltipLeft = minLeft
+                          
+                          // 确保不超出容器右边界
+                          const maxRight = containerRect.right - 16
+                          if (tooltipLeft + tooltipWidth > maxRight) {
+                            tooltipLeft = maxRight - tooltipWidth
+                          }
+                          
+                          // 计算箭头位置（相对于悬浮框，指向缩略地址中心）
+                          const arrowLeft = elementCenter - tooltipLeft
+                          
+                          setTooltipPosition({
+                            show: true,
+                            accountId: account.id,
+                            top: rect.bottom + 4,
+                            left: tooltipLeft,
+                            width: tooltipWidth,
+                            arrowLeft: arrowLeft
+                          })
+                        }}
+                        onMouseLeave={() => {
+                          setTooltipPosition(prev => ({ ...prev, show: false }))
+                        }}
+                      >
+                        {account.address.slice(0, 10)}...{account.address.slice(-8)}
+                      </div>
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
                       {account.balance} USDC
@@ -252,56 +320,76 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowOptionsMenu(showOptionsMenu === account.id ? null : account.id)
+                        if (showOptionsMenu === account.id) {
+                          setShowOptionsMenu(null)
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setMenuPosition({
+                            top: rect.bottom + 4,
+                            left: rect.right - 160  // 160px是菜单宽度
+                          })
+                          setShowOptionsMenu(account.id)
+                        }
                       }}
                       className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold leading-none p-1"
                     >
                       ⋮
                     </button>
-                    
-                    {/* 选项菜单 */}
-                    {showOptionsMenu === account.id && (
-                      <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-10">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleOpenRename(account.id, account.name)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg"
-                        >
-                          {t('account.rename')}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setExportAccountId(account.id)
-                            setShowExportDialog(true)
-                            setShowOptionsMenu(null)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-                        >
-                          {t('account.export_private_key')}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleOpenDelete(account.id)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg"
-                        >
-                          {t('account.delete')}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             )
           })}
+          </div>
         </div>
+        
+        {/* 选项菜单 - fixed定位，显示在最上层 */}
+        {showOptionsMenu && (
+          <div 
+            className="fixed w-40 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-[250]"
+            style={{
+              top: `${menuPosition.top}px`,
+              left: `${menuPosition.left}px`
+            }}
+          >
+            {accounts.map((account) => showOptionsMenu === account.id && (
+              <div key={account.id}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenRename(account.id, account.name)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg"
+                >
+                  {t('account.rename')}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setExportAccountId(account.id)
+                    setShowExportDialog(true)
+                    setShowOptionsMenu(null)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  {t('account.export_private_key')}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenDelete(account.id)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg"
+                >
+                  {t('account.delete')}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 添加账户按钮 */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={handleShowAddDialog}
             className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 font-medium"
@@ -391,7 +479,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  console.log('[AccountMenu] Opening import dialog')
                   setShowAddAccountDialog(false)
                   setShowImportDialog(true)
                 }}
@@ -548,6 +635,88 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* 密码确认对话框 */}
+      {showPasswordConfirm && pendingAccount && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              {t('account.enter_password')}
+            </h3>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              请输入您的钱包密码以加密新账户
+            </p>
+            
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleConfirmPassword()
+                  if (e.key === 'Escape') {
+                    setShowPasswordConfirm(false)
+                    setConfirmPassword('')
+                    setConfirmError('')
+                    setPendingAccount(null)
+                  }
+                }}
+              />
+              
+              {confirmError && (
+                <div className="text-red-600 dark:text-red-400 text-sm">
+                  {confirmError}
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPasswordConfirm(false)
+                    setConfirmPassword('')
+                    setConfirmError('')
+                    setPendingAccount(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={handleConfirmPassword}
+                  disabled={!confirmPassword.trim()}
+                  className="flex-1 px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {t('common.confirm')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 全局悬浮地址提示框 - fixed定位，显示在最上层 */}
+      {tooltipPosition.show && tooltipPosition.accountId && (
+        <div 
+          className="fixed px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-mono rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-[300] pointer-events-none whitespace-nowrap"
+          style={{
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+          }}
+        >
+          {accounts.find(acc => acc.id === tooltipPosition.accountId)?.address}
+          <div 
+            className="absolute bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-white dark:border-b-gray-700"
+            style={{ 
+              left: `${tooltipPosition.arrowLeft}px`,
+              transform: 'translateX(-50%)'
+            }}
+          ></div>
         </div>
       )}
     </div>

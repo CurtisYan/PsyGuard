@@ -59,7 +59,7 @@ interface WalletState {
   
   // 操作
   initialize: (address: string, privateKey: string, password: string) => Promise<void>
-  addAccount: (name: string, address: string, privateKey: string) => Promise<void>
+  addAccount: (name: string, address: string, privateKey: string, password: string) => Promise<void>
   switchAccount: (accountId: string) => Promise<void>
   renameAccount: (accountId: string, newName: string) => void
   deleteAccount: (accountId: string) => void
@@ -123,16 +123,17 @@ export const useWalletStore = create<WalletState>()(
         }
       },
       
-      addAccount: async (name: string, address: string, privateKey: string) => {
+      addAccount: async (name: string, address: string, privateKey: string, password: string) => {
         try {
           const state = get()
           if (!state.passwordHash) throw new Error('No password set')
           
-          // 使用当前密码加密新账户的私钥
-          // 注意：这里我们需要用户重新输入密码来加密
-          // 简化实现：使用相同的加密逻辑
-          const tempPassword = '__temp__' // 临时方案
-          const encryptedPrivateKey = await encryptPrivateKey(privateKey, tempPassword)
+          // 验证密码
+          const isValid = await verifyPassword(password, state.passwordHash)
+          if (!isValid) throw new Error('Invalid password')
+          
+          // 使用用户密码加密新账户的私钥
+          const encryptedPrivateKey = await encryptPrivateKey(privateKey, password)
           
           const newAccount: Account = {
             id: Date.now().toString(),
@@ -267,18 +268,23 @@ export const useWalletStore = create<WalletState>()(
         set({ balance, symbol })
       },
       
-      addActivity: (activity) => {
-        set((state) => ({
+      addActivity: (activity: Omit<Activity, 'id' | 'timestamp'>) =>
+      set((state) => {
+        // 从 localStorage 读取当前语言设置
+        const currentLang = localStorage.getItem('psy-language') || 'en'
+        const locale = currentLang === 'zh' ? 'zh-CN' : 'en-US'
+        
+        return {
           activities: [
             {
               ...activity,
               id: Date.now().toString(),
-              timestamp: new Date().toLocaleString('zh-CN'),
+              timestamp: new Date().toLocaleString(locale),
             },
             ...state.activities,
           ],
-        }))
-      },
+        }
+      }),
       
       showToast: (message, type = 'success') => {
         set({ toast: { message, type } })
@@ -318,7 +324,6 @@ export const useWalletStore = create<WalletState>()(
       migrate: (persistedState: any, _version: number) => {
         // 旧数据没有加密，清除它们，让用户重新初始化
         if (persistedState.address && persistedState.privateKey && !persistedState.passwordHash) {
-          console.log('[Migration] Old unencrypted data found - reset required')
           return {
             isInitialized: false,
             isLocked: true,
@@ -345,14 +350,9 @@ function applyTheme(theme: ThemeMode) {
 
   const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 
-  console.log('[Theme] Applying theme:', theme, 'isDark:', isDark)
-  console.log('[Theme] Elements:', { root: !!root, body: !!body, appRoot: !!appRoot })
-
   root.classList.toggle('dark', isDark)
   if (body) body.classList.toggle('dark', isDark)
   if (appRoot) appRoot.classList.toggle('dark', isDark)
-  
-  console.log('[Theme] Applied. documentElement classes:', root.className)
 }
 
 // 运行时迁移检查（防止用户已经打开扩展的情况）
@@ -360,7 +360,6 @@ if (typeof window !== 'undefined') {
   const state = useWalletStore.getState()
   // 如果有旧数据且没有密码哈希，清除它
   if (state.address && state.privateKey && !state.passwordHash) {
-    console.log('[Runtime Migration] Old unencrypted data detected, clearing...')
     useWalletStore.setState({
       isInitialized: false,
       isLocked: true,
@@ -379,7 +378,6 @@ if (typeof window !== 'undefined') {
   // 等待DOM准备好
   const initTheme = () => {
     const store = useWalletStore.getState()
-    console.log('[Theme] Initializing theme:', store.theme)
     applyTheme(store.theme)
   }
   
@@ -402,7 +400,6 @@ if (typeof window !== 'undefined') {
   let previousTheme: ThemeMode | null = null
   useWalletStore.subscribe((state) => {
     if (state.theme !== previousTheme) {
-      console.log('[Theme] Store theme changed:', previousTheme, '->', state.theme)
       previousTheme = state.theme
       applyTheme(state.theme)
     }
